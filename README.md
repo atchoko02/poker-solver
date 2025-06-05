@@ -1,2 +1,2 @@
-# poker-app
-useful for tracking poker earnings &amp; such
+# Poker Solver
+By Alex Tchokokam and Sebastian Baxa

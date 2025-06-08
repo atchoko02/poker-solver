@@ -9,7 +9,7 @@ class GameState:
         self.evaluator = Evaluator()
         self.hands = []
         self.community_cards = []
-
+        self.betting_percents = {'IP': 0.5, 'OOP': 0.5}
 
     
     def create_new_flop(self, card1, card2, card3):

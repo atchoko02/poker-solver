@@ -7,7 +7,9 @@ vibe code
  - input bet and raise amounts
 
  - 
- 
+    
+
+    Each hand in the players range will have their own stratagy trees
     Structure:
         - Each node will be kept track of as game states
 
@@ -17,7 +19,8 @@ vibe code
         
         Terminal Nodes:
             - terminal nodes will have to know their values by keeping track of how much has been contributed, and the winnings.
-            - FIGURE OUT HOW TO GET THE VALUES FOR EACH HAND
+            - At fold nodes simply return -countribution for the foled player and +pot for the winning player
+            - At showdown nodes we must calculate the chances of winning against the other players range, and use this to calculate the terminal nodes value
 
         What each node needs to know:
             - how much they (IP/OOP) have contributed

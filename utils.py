@@ -1,4 +1,6 @@
 from treys import Card
+import copy
+from random import Random
 
 class Range:
     # class to represent a range of poker hands
@@ -55,3 +57,23 @@ class Hand:
         return hash_value
 
 # def add_pocket_pairs():
+
+class Deck:
+    def __init__(self, cards=[]):
+        if len(cards) > 0:
+            self.cards = cards
+        else:
+            self.cards = [Card.new(f"{rank}{suit}") for rank in '23456789TJQKA' for suit in 'cdhs']
+        self.random = Random()
+        self.random.shuffle(self.cards)
+    
+    def draw(self, num=1):
+        if num < 1 or num > len(self.cards):
+            raise ValueError("Invalid number of cards to draw")
+        drawn_cards = self.cards[:num]
+        self.cards = self.cards[num:]
+        return drawn_cards if num > 1 else drawn_cards[0]
+
+    def copy(self):
+        new_deck = Deck(copy.deepcopy(self.cards))
+        return new_deck

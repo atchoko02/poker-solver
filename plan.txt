@@ -13,7 +13,7 @@ vibe code
     Structure:
         - Each node will be kept track of as game states
 
-        - each ndoe will have to know their current frequencies, and be able to recalculate a new stratagy
+        - each node will have to know their current frequencies, and be able to recalculate a new stratagy
             - so we need to keep track of the EV's of each of out children, and use this with the probability if each child to caculate our current stratagy EV
             - Then from this we can calculate regret of each child, and from the regret of each child we are able to cacluate out new stratagy
         

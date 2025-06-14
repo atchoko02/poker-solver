@@ -1,4 +1,4 @@
-from treys import Card
+from treys import Card, Evaluator
 import copy
 from random import Random
 
@@ -47,7 +47,7 @@ class Hand:
             return self.cards == other.cards
         return False
     
-    def __str__(self):
+    def __repr__(self):
         return f"Hand: {', '.join(Card.int_to_pretty_str(card) for card in self.cards)}"
     
     def __hash__(self):
@@ -77,3 +77,54 @@ class Deck:
     def copy(self):
         new_deck = Deck(copy.deepcopy(self.cards))
         return new_deck
+
+class GameState:
+
+    def __init__(self):
+        self.deck = Deck()
+        self.evaluator = Evaluator()
+        self.IPfreqs = {}
+        self.OOPfreqs = {}
+        self.IPRegret = {}
+        self.OOPRegret = {}
+        self.community_cards = []
+        self.contribution = {'IP': 0, 'OOP': 0}  # Contribution to the pot by each player
+
+        # NEED TO ADD A WAY TO CHANGE THESE DEFAULTS
+        self.pot = 50 # dault pot size
+        self.betting_percents = {'IP': 0.5, 'OOP': 0.5}  # Default betting percentages for IP and OOP
+        self.inital_pot = self.pot  # Store the initial pot size for reference
+
+    
+    def create_new_flop(self, card1, card2, card3):
+        if card1 == card2 or card1 == card3 or card2 == card3:  
+            raise ValueError("Community cards must be unique")
+        self.community_cards = [card1, card2, card3]
+    
+    def generate_default_freqs(self, IPRange, OOPRange):
+        for hand in IPRange.hands:
+            self.IPfreqs[hand] = [0.33, 0.33, 0.33]  # Default frequencies
+        
+        for hand in OOPRange.hands:
+            self.OOPfreqs[hand] = [0.33, 0.33, 0.33]
+
+
+    def add_card(self):
+        new_card = self.deck.draw(1)
+        self.community_cards.append(self.deck.draw(1))
+    
+    def __copy__(self):
+        new_state = GameState()
+        new_state.deck = self.deck.copy()
+        new_state.evaluator = self.evaluator
+        new_state.community_cards = copy.deepcopy(self.community_cards)
+        new_state.IPfreqs = copy.deepcopy(self.IPfreqs)
+        new_state.OOPfreqs = copy.deepcopy(self.OOPfreqs)
+        new_state.IPRegret = copy.deepcopy(self.IPRegret)
+        new_state.OOPRegret = copy.deepcopy(self.OOPRegret)
+        new_state.betting_percents = copy.deepcopy(self.betting_percents)
+        new_state.contribution = copy.deepcopy(self.contribution)
+        new_state.pot = self.pot
+        new_state.inital_pot = self.inital_pot
+        return new_state
+    

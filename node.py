@@ -1,7 +1,7 @@
 # for now i will try generating a tree of node correctly and ignore the info / stratagy 
 # This will represent a node in the tree, and contain all the data that each node will have
 class Node:
-    def __init__(self, gamestate, position, node_type, raise_level=0, values = {IP: None, OOP: None}):
+    def __init__(self, gamestate, position, node_type, raise_level=0, values = {'IP': None, 'OOP': None}):
         self.gamestate = gamestate  # this will be the game state at this node
         self.children = []
         self.position = position  # 'IP' or 'OOP'
@@ -37,9 +37,26 @@ class Node:
                     new_state = self.gamestate.__copy__()
                     raise_percent = self.gamestate.betting_percents[self.position]
                     new_state.pot += new_state.pot * raise_percent
-                    new_state.contripution[self.position] += new_state.pot * raise_percent
+                    new_state.contribution[self.position] += new_state.pot * raise_percent
                     reaction_node = Node(new_state, child_position, 'reaction', raise_level=self.raise_level + 1)
                     self.children.append(reaction_node)
+                # if we cant raise we replicate a check
+                else:
+                    if self.position == 'OOP':
+                        action_node = Node(self.gamestate, child_position, 'action')
+                        self.children.append(action_node)
+                    else:
+                        if len(self.gamestate.community_cards) == 5:
+                            # if we are at the river it doesnt make a new sequence
+                            # so we just add a terminal node
+                            action_node = Node(self.gamestate, self.position, 'terminal')
+                            self.children.append(action_node)
+                        else:
+                            new_state = self.gamestate.__copy__()
+                            new_state.add_card()
+                            IP_check_node = Node(new_state, child_position, 'action')
+                            self.children.append(IP_check_node)
+
 
                 # this respresnts a check - for IP this will start a new sequence
                 if self.position == 'OOP':
@@ -73,7 +90,28 @@ class Node:
                     new_state.contripution[self.position] += new_state.pot * raise_percent
                     reaction_node = Node(new_state, child_position, 'reaction', raise_level=self.raise_level + 1)
                     self.children.append(reaction_node)
+                # if we cant raise we replicate a call
+                else:
+                    if len(self.gamestate.community_cards) == 5:
+                        # if we are at the river it doesnt make a new sequence
+                        # so we just add a terminal node
+                        new_state = self.gamestate.__copy__()
+                        call_amount = self.gamestate.intial_pot + self.gamestate.contribution[self.position] - self.gamestate.pot
+                        new_state.contribution[self.position] += call_amount
+                        new_state.pot += call_amount
+                        call_node = Node(new_state, self.position, 'terminal')
+                        self.children.append(call_node)
+                    else:
+                        new_state = self.gamestate.__copy__()
+                        new_state.add_card()
+                        call_amount = self.gamestate.intial_pot + self.gamestate.contribution[self.position] - self.gamestate.pot
+                        new_state.contribution[self.position] += call_amount
+                        new_state.pot += call_amount
+                        call_node = Node(new_state, child_position, 'action')
+                        self.children.append(call_node)
+                
 
+                # call
                 if len(self.gamestate.community_cards) == 5:
                     # if we are at the river it doesnt make a new sequence
                     # so we just add a terminal node
@@ -135,15 +173,19 @@ class Node:
                     split_percent = split / total
                     self.values['IP'] = IP_win_percent * self.gamestate.pot - OOP_win_percent * self.gamestate.contribution['IP'] + split_percent * (self.gamestate.pot / 2)
                     self.values['OOP'] = OOP_win_percent * self.gamestate.pot - IP_win_percent * self.gamestate.contribution['OOP'] + split_percent * (self.gamestate.pot / 2)
+            print(f"Terminal Node Values: {self.values}")
             return
         else:
+            print(f"Calculating values for node: {self}")
+            print(self.children)
             player_range = self.gamestate.IPRange if self.position == 'IP' else self.gamestate.OOPRange
             player_freqs = self.gamestate.IPfreqs if self.position == 'IP' else self.gamestate.OOPfreqs
 
             for hand in player_range.hands:
-                evs = [0, 0, 0] # fold, call/check, raise
+                evs = [0, 0, 0] # fold, raise, call/check
                 for i in range(3):
-                    self.children[i].calc_values() 
+                    print('Calculating value for child:', self.children[i])
+                    self.children[i].calc_values()
                     evs[i] = self.children[i].values[self.position] * player_freqs[hand][i]
                 
                 strategy_value = sum(evs)
@@ -168,24 +210,14 @@ class Node:
                             self.gamestate.OOPRegret[hand][1] / sum(self.gamestate.OOPRegret[hand]),
                             self.gamestate.OOPRegret[hand][2] / sum(self.gamestate.OOPRegret[hand])
                         ]
-                        
 
-
-        for child in self.children:
-            if child.value is None:
-                child.calc_values()
 
     def to_string_tree(self, level=0):
         indent = "  " * level
-        result = f"({indent}{self.position}, {self.type}, {len(self.gamestate.community_cards)})\n"
-        if self.children:
-            # Print all children on one line, comma-separated
-            child_line = indent + "  " + ", ".join(
-                f"{child.position}, {child.type}" for child in self.children
-            )
-            result += child_line + "\n"
-            # Recursively print each child's subtree
-            for child in self.children:
-                if child.children:
-                    result += child.to_string_tree(level + 1)
+        result = f"{indent}{self.position}, {self.type}, {len(self.gamestate.community_cards)}\n"
+        for child in self.children:
+            result += child.to_string_tree(level + 1)
         return result
+    
+    def __repr__(self):
+        return f"Node(position={self.position}, type={self.type}, card_count={len(self.gamestate.community_cards)})"

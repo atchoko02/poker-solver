@@ -83,6 +83,8 @@ class GameState:
     def __init__(self):
         self.deck = Deck()
         self.evaluator = Evaluator()
+        self.IPRange = Range()
+        self.OOPRange = Range()
         self.IPfreqs = {}
         self.OOPfreqs = {}
         self.IPRegret = {}
@@ -104,10 +106,14 @@ class GameState:
     def generate_default_freqs(self, IPRange, OOPRange):
         for hand in IPRange.hands:
             self.IPfreqs[hand] = [0.33, 0.33, 0.33]  # Default frequencies
-        
+            self.IPRegret[hand] = [0, 0, 0]  # Initialize regret for each action
         for hand in OOPRange.hands:
             self.OOPfreqs[hand] = [0.33, 0.33, 0.33]
+            self.OOPRegret[hand] = [0, 0, 0]
 
+    def add_ranges(self, IPRange, OOPRange):
+        self.IPRange = IPRange
+        self.OOPRange = OOPRange
 
     def add_card(self):
         new_card = self.deck.draw(1)

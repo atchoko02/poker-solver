@@ -92,6 +92,7 @@ class GameState:
         self.IPvalues = {}
         self.OOPvalues = {}
         self.community_cards = []
+        self.turn_and_river = []
         self.contribution = {'IP': 0, 'OOP': 0}  # Contribution to the pot by each player
 
         # NEED TO ADD A WAY TO CHANGE THESE DEFAULTS
@@ -99,7 +100,10 @@ class GameState:
         self.betting_percents = {'IP': 0.5, 'OOP': 0.5}  # Default betting percentages for IP and OOP
         self.initial_pot = self.pot  # Store the initial pot size for reference
 
-    
+    def add_turn_and_river(self, card1, card2):
+        self.turn_and_river.append(card1)
+        self.turn_and_river.append(card2)
+
     def create_new_flop(self, card1, card2, card3):
         if card1 == card2 or card1 == card3 or card2 == card3:  
             raise ValueError("Community cards must be unique")
@@ -119,15 +123,18 @@ class GameState:
         self.IPRange = IPRange
         self.OOPRange = OOPRange
 
-    def add_card(self):
-        new_card = self.deck.draw(1)
-        self.community_cards.append(self.deck.draw(1))
+    def add_card(self, num):
+        if num == 3:
+            self.community_cards.append(self.turn_and_river[0])
+        else:
+            self.community_cards.append(self.turn_and_river[1])
     
     def __copy__(self):
         new_state = GameState()
         new_state.deck = self.deck.copy()
         new_state.evaluator = self.evaluator
         new_state.community_cards = copy.deepcopy(self.community_cards)
+        new_state.turn_and_river = copy.deepcopy(self.turn_and_river)
         new_state.IPfreqs = copy.deepcopy(self.IPfreqs)
         new_state.OOPfreqs = copy.deepcopy(self.OOPfreqs)
         new_state.IPRegret = copy.deepcopy(self.IPRegret)

@@ -55,7 +55,7 @@ class Node:
                             self.children.append(action_node)
                         else:
                             new_state = self.gamestate.__copy__()
-                            new_state.add_card()
+                            new_state.add_card(len(self.gamestate.community_cards))
                             IP_check_node = Node(new_state, child_position, 'action')
                             self.children.append(IP_check_node)
 
@@ -72,7 +72,7 @@ class Node:
                         self.children.append(action_node)
                     else:
                         new_state = self.gamestate.__copy__()
-                        new_state.add_card()
+                        new_state.add_card(len(self.gamestate.community_cards))
                         IP_check_node = Node(new_state, child_position, 'action')
                         self.children.append(IP_check_node)
 
@@ -99,15 +99,15 @@ class Node:
                         # if we are at the river it doesnt make a new sequence
                         # so we just add a terminal node
                         new_state = self.gamestate.__copy__()
-                        call_amount = self.gamestate.initial_pot + self.gamestate.contribution[self.position] - self.gamestate.pot
+                        call_amount = self.gamestate.pot - (self.gamestate.initial_pot + self.gamestate.contribution[self.position])
                         new_state.contribution[self.position] += call_amount
                         new_state.pot += call_amount
                         call_node = Node(new_state, self.position, 'terminal')
                         self.children.append(call_node)
                     else:
                         new_state = self.gamestate.__copy__()
-                        new_state.add_card()
-                        call_amount = self.gamestate.initial_pot + self.gamestate.contribution[self.position] - self.gamestate.pot
+                        new_state.add_card(len(self.gamestate.community_cards))
+                        call_amount = self.gamestate.pot - (self.gamestate.initial_pot + self.gamestate.contribution[self.position])
                         new_state.contribution[self.position] += call_amount
                         new_state.pot += call_amount
                         call_node = Node(new_state, child_position, 'action')
@@ -119,15 +119,15 @@ class Node:
                     # if we are at the river it doesnt make a new sequence
                     # so we just add a terminal node
                     new_state = self.gamestate.__copy__()
-                    call_amount = self.gamestate.initial_pot + self.gamestate.contribution[self.position] - self.gamestate.pot
+                    call_amount = self.gamestate.pot - (self.gamestate.contribution[self.position] + self.gamestate.initial_pot)
                     new_state.contribution[self.position] += call_amount
                     new_state.pot += call_amount
                     call_node = Node(new_state, self.position, 'terminal')
                     self.children.append(call_node)
                 else:
                     new_state = self.gamestate.__copy__()
-                    new_state.add_card()
-                    call_amount = self.gamestate.initial_pot + self.gamestate.contribution[self.position] - self.gamestate.pot
+                    new_state.add_card(len(self.gamestate.community_cards))
+                    call_amount = self.gamestate.pot - (self.gamestate.contribution[self.position] + self.gamestate.initial_pot)
                     new_state.contribution[self.position] += call_amount
                     new_state.pot += call_amount
                     call_node = Node(new_state, child_position, 'action')
@@ -139,7 +139,6 @@ class Node:
 
     def calc_values(self):
         if self.type == 'terminal':
-            print(f"calculating terminal node: {self}")
             # if a player has folded
             if self.isFold:
                 other_position = 'IP' if self.position == 'OOP' else 'OOP'
@@ -196,9 +195,9 @@ class Node:
                         for card2 in OOPhand.cards:
                             if card2 in self.gamestate.community_cards or card2 in IPhand.cards:
                                 continue
-                        if self.gamestate.evaluator.evaluate(list(IPhand.cards), self.gamestate.community_cards) > self.gamestate.evaluator.evaluate(list(OOPhand.cards), self.gamestate.community_cards):
+                        if self.gamestate.evaluator.evaluate(list(IPhand.cards), self.gamestate.community_cards) < self.gamestate.evaluator.evaluate(list(OOPhand.cards), self.gamestate.community_cards):
                             IP_win_map[IPhand] += 1
-                        elif self.gamestate.evaluator.evaluate(list(IPhand.cards), self.gamestate.community_cards) < self.gamestate.evaluator.evaluate(list(OOPhand.cards), self.gamestate.community_cards):
+                        elif self.gamestate.evaluator.evaluate(list(IPhand.cards), self.gamestate.community_cards) > self.gamestate.evaluator.evaluate(list(IPhand.cards), self.gamestate.community_cards):
                             OOP_win_map[OOPhand] += 1
                         else:
                             IPsplit_map[IPhand] += 1
@@ -213,7 +212,7 @@ class Node:
                     else:
                         IP_win_percent = IP_win_map[hand] / IP_total_map[hand]
                         split_percent = IPsplit_map[hand] / IP_total_map[hand]
-                        self.gamestate.IPvalues[hand] = IP_win_percent * self.gamestate.pot - (IP_total_map[hand] - IP_win_map[hand]) * self.gamestate.contribution['IP'] + split_percent * (self.gamestate.pot / 2)
+                        self.gamestate.IPvalues[hand] = IP_win_percent * self.gamestate.pot - ((IP_total_map[hand] - IP_win_map[hand]) / IP_total_map[hand]) * self.gamestate.contribution['IP'] + split_percent * (self.gamestate.pot / 2)
 
                 # calculate values for OOP hands
                 for hand in OOP_win_map:
@@ -222,7 +221,7 @@ class Node:
                     else:
                         OOP_win_percent = OOP_win_map[hand] / OOP_total_map[hand]
                         split_percent = OOPsplit_map[hand] / OOP_total_map[hand]
-                        self.gamestate.OOPvalues[hand] = OOP_win_percent * self.gamestate.pot - (OOP_total_map[hand] - OOP_win_map[hand]) * self.gamestate.contribution['OOP'] + split_percent * (self.gamestate.pot / 2)
+                        self.gamestate.OOPvalues[hand] = OOP_win_percent * self.gamestate.pot - ((OOP_total_map[hand] - OOP_win_map[hand]) / OOP_total_map[hand]) * self.gamestate.contribution['OOP'] + split_percent * (self.gamestate.pot / 2)
 
                 for hand in self.gamestate.IPRange.hands:
                     if hand not in self.gamestate.IPvalues or self.gamestate.IPvalues[hand] is None:
@@ -232,39 +231,38 @@ class Node:
                     if hand not in self.gamestate.OOPvalues or self.gamestate.OOPvalues[hand] is None:
                         self.gamestate.OOPvalues[hand] = 0
         else:
-            print(f"calculating: {self}, current values: IP{self.gamestate.IPvalues} OOP{self.gamestate.OOPvalues}")
-            player_range = self.gamestate.IPRange if self.position == 'IP' else self.gamestate.OOPRange
-            player_freqs = self.gamestate.IPfreqs if self.position == 'IP' else self.gamestate.OOPfreqs
 
-            for hand in player_range.hands:
-                evs = [0, 0, 0] # fold, raise, call/check
+            #calculate IP value
+            for hand in self.gamestate.IPRange.hands:
+                action_values = []
                 for i in range(3):
-                    if self.position == 'IP':
-                        if self.children[i].gamestate.IPvalues[hand] is None:
-                            self.children[i].calc_values()
-                        ip_val = self.children[i].gamestate.IPvalues.get(hand)
-                        freq = player_freqs[hand][i]
-                        if ip_val != None:
-                            evs[i] = ip_val * freq
-                        else:
-                            evs[i] = 0
-                    else:
-                        if self.children[i].gamestate.OOPvalues[hand] is None:
-                            self.children[i].calc_values()
-                        oop_val = self.children[i].gamestate.OOPvalues.get(hand)
-                        freq = player_freqs[hand][i]
-                        if oop_val != None:
-                            evs[i] = oop_val * freq
-                        else:
-                            evs[i] = 0
+                    if self.children[i].gamestate.IPvalues[hand] is None:
+                        self.children[i].calc_values()
+                    ip_val = self.children[i].gamestate.IPvalues.get(hand)
+                    action_values.append(ip_val)
+                print(f"{self} IP actions evs: {action_values}")
+                strategy_ev = sum(action_values[i] * self.gamestate.IPfreqs[hand][i] for i in range(3))
+                self.gamestate.IPvalues[hand] = strategy_ev
+                for i in range(3):
+                    regret = action_values[i] - strategy_ev
+                    self.gamestate.IPRegret[hand][i] = max(0, regret)
+                    
+                    
+            # calculate OOP value
+            for hand in self.gamestate.OOPRange.hands:
+                action_values = []
+                for i in range(3):
+                    if self.children[i].gamestate.OOPvalues[hand] is None:
+                        self.children[i].calc_values()
+                    oop_val = self.children[i].gamestate.OOPvalues.get(hand)
+                    action_values.append(oop_val)
+                print(f"{self} OOP action evs: {action_values}")
+                strategy_ev = sum(action_values[i] * self.gamestate.OOPfreqs[hand][i] for i in range(3))
+                self.gamestate.OOPvalues[hand] = strategy_ev
+                for i in range(3):
+                    regret = action_values[i] - strategy_ev
+                    self.gamestate.OOPRegret[hand][i] = max(0, regret)
                 
-                strategy_value = sum(evs[i] * player_freqs[hand][i] for i in range(3) if evs[i] is not None and player_freqs[hand][i] is not None)
-                for i in range(3):
-                    regret = evs[i] - strategy_value
-                    if self.position == 'IP':
-                        self.gamestate.IPRegret[hand][i] = max(0, regret)
-                    else:
-                        self.gamestate.OOPRegret[hand][i] = max(0, regret)
                 
                 # start forming new strategy values
                 # if self.position == 'IP':

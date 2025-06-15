@@ -26,7 +26,7 @@ class Range:
         else:
             raise ValueError("Hand not found in range")
     
-    def __str__(self):
+    def __repr__(self):
         return ", ".join(str(hand) for hand in self.hands)
 
 class Hand:
@@ -89,13 +89,15 @@ class GameState:
         self.OOPfreqs = {}
         self.IPRegret = {}
         self.OOPRegret = {}
+        self.IPvalues = {}
+        self.OOPvalues = {}
         self.community_cards = []
         self.contribution = {'IP': 0, 'OOP': 0}  # Contribution to the pot by each player
 
         # NEED TO ADD A WAY TO CHANGE THESE DEFAULTS
         self.pot = 50 # dault pot size
         self.betting_percents = {'IP': 0.5, 'OOP': 0.5}  # Default betting percentages for IP and OOP
-        self.inital_pot = self.pot  # Store the initial pot size for reference
+        self.initial_pot = self.pot  # Store the initial pot size for reference
 
     
     def create_new_flop(self, card1, card2, card3):
@@ -107,9 +109,11 @@ class GameState:
         for hand in IPRange.hands:
             self.IPfreqs[hand] = [0.33, 0.33, 0.33]  # Default frequencies
             self.IPRegret[hand] = [0, 0, 0]  # Initialize regret for each action
+            self.IPvalues[hand] = None
         for hand in OOPRange.hands:
             self.OOPfreqs[hand] = [0.33, 0.33, 0.33]
             self.OOPRegret[hand] = [0, 0, 0]
+            self.OOPvalues[hand] = None
 
     def add_ranges(self, IPRange, OOPRange):
         self.IPRange = IPRange
@@ -130,7 +134,11 @@ class GameState:
         new_state.OOPRegret = copy.deepcopy(self.OOPRegret)
         new_state.betting_percents = copy.deepcopy(self.betting_percents)
         new_state.contribution = copy.deepcopy(self.contribution)
+        new_state.IPRange = copy.deepcopy(self.IPRange)
+        new_state.OOPRange = copy.deepcopy(self.OOPRange)
         new_state.pot = self.pot
-        new_state.inital_pot = self.inital_pot
+        new_state.initial_pot = self.initial_pot
+        new_state.IPvalues = copy.deepcopy(self.IPvalues)
+        new_state.OOPvalues = copy.deepcopy(self.OOPvalues)
         return new_state
     

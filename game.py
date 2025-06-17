@@ -26,7 +26,7 @@ solver.flop_cards = [Card.new('3d'), Card.new('Jh'), Card.new('As')]
 hands = [Hand([Card.new('Qd'), Card.new('Qh')]), Hand([Card.new('Ad'), Card.new('Kc')])]
 for hand in hands:
     solver.IPRange.add_hand(hand)
-hands2 = [Hand([Card.new('Ac'), Card.new('9d')]), Hand([Card.new('5d'), Card.new('2s')])]
+hands2 = [Hand([Card.new('Ac'), Card.new('Ad')]), Hand([Card.new('5d'), Card.new('2s')]), Hand([Card.new('Qd'), Card.new('Qh')])]
 for hand in hands2:
     solver.OOPRange.add_hand(hand)
 
@@ -35,37 +35,49 @@ solver.game_state.generate_default_freqs(solver.IPRange, solver.OOPRange)
 solver.game_state.create_new_flop(solver.flop_cards[0], solver.flop_cards[1], solver.flop_cards[2])
 solver.game_state.add_turn_and_river(Card.new('7d'), Card.new('8h'))
 root = Node(solver.game_state.__copy__(), 'OOP', 'action')
-root.generate_children(2)
-root.calc_values()
+root.generate_children(3)
+for i in range(50):
+    root.calc_values()
+    root.calc_new_strat()
 
 print("\n")
 print(f"OOP regret: {root.gamestate.OOPRegret}")
+print(f"OOP new stratagy: {root.gamestate.OOPfreqs}")
 
 print("\nOOP checks\n")
 check_node = root.children[2]
+print(check_node)
 print(f"IP regret: {check_node.gamestate.IPRegret}")
+print(f"IP new strat: {check_node.gamestate.IPfreqs}")
 
 print("\nIP raises\n")
-raise_node = check_node.children[1]
-print(f"IP contribution: {raise_node.gamestate.contribution}")
-print(f"OOP regret: {raise_node.gamestate.OOPRegret}")
+raise_node = root.children[1]
+print(raise_node)
+print(f"OOP regret: {check_node.gamestate.OOPRegret}")
+print(f"OOP new strat: {check_node.gamestate.OOPfreqs}")
 
-print("\nOOP calls\n")
-call_node = raise_node.children[2]
-print(call_node)
-print(f"IP contribtion: {call_node.gamestate.contribution}")
-print(f"IP regret: {call_node.gamestate.IPRegret}")
 
 # sampletree = Node(solver.game_state, 'OOP', 'action')
-# terminal1 = Node(solver.game_state.__copy__(), 'IP', 'terminal')
-# terminal2 = Node(solver.game_state.__copy__(), 'IP', 'terminal')
-# terminal3 = Node(solver.game_state.__copy__(), 'IP', 'terminal')
+# fold_node = Node(solver.game_state.__copy__(), 'IP', 'terminal')
+# fold_node.isFold = True
+# sampletree.children.append(fold_node)
 
-# sampletree.children = [terminal1, terminal2, terminal3]
+# raise_state = solver.game_state.__copy__()
+# raise_state.contribution['OOP'] += 50
+# raise_state.pot += 50
+# raise_node = Node(raise_state, 'IP', 'reaction')
+# sampletree.children.append(raise_node)
+
+# terminal1 = Node(solver.game_state.__copy__(), 'IP', 'terminal')
+# sampletree.children.append(terminal1)
+
+# for i in range(3):
+#     call_state = raise_state.__copy__()
+#     call_state.contribution['IP'] += 50
+#     call_state.pot += 50
+#     raise_node.children.append(Node(call_state, 'OOP', 'terminal'))
+
 # sampletree.calc_values()
-# print(f"IP values: {sampletree.gamestate.IPvalues}")
-# print(f"IP regret: {sampletree.gamestate.IPRegret}")
-# print("\n")
 # print(f"OOP values: {sampletree.gamestate.OOPvalues}")
 # print(f"OOP regret: {sampletree.gamestate.OOPRegret}")
 

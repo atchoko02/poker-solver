@@ -96,7 +96,7 @@ class GameState:
         self.contribution = {'IP': 0, 'OOP': 0}  # Contribution to the pot by each player
 
         # NEED TO ADD A WAY TO CHANGE THESE DEFAULTS
-        self.pot = 50 # dault pot size
+        self.pot = 100 # dault pot size
         self.betting_percents = {'IP': 0.5, 'OOP': 0.5}  # Default betting percentages for IP and OOP
         self.initial_pot = self.pot  # Store the initial pot size for reference
 

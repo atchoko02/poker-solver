@@ -168,10 +168,10 @@ class Node:
                                 self.gamestate.OOPvalues[OOPhand] = 0
                                 continue
                         if self.position == 'IP':
-                            self.gamestate.OOPvalues[OOPhand] = self.gamestate.pot
+                            self.gamestate.OOPvalues[OOPhand] = self.gamestate.contribution['IP']
                             self.gamestate.IPvalues[IPhand] = -self.gamestate.contribution['IP']
                         else:
-                            self.gamestate.IPvalues[IPhand] = self.gamestate.pot
+                            self.gamestate.IPvalues[IPhand] = self.gamestate.contribution['OOP']
                             self.gamestate.OOPvalues[OOPhand] = -self.gamestate.contribution['OOP']
         
             # showodown node
@@ -320,35 +320,38 @@ class Node:
                         regret = action_values[i] - strategy_ev
                         self.gamestate.IPRegret[hand][i] = max(0, regret)
 
-    def calc_new_strat(self):
+    def calc_new_strat(self, pos):
         # base case
         if self.type == 'terminal':
             return
 
         # start forming new strategy values
-        for hand in self.gamestate.IPfreqs:
-            regret_sum = sum(self.gamestate.IPRegret[hand])
-            if regret_sum > 0:
-                self.gamestate.IPfreqs[hand] = [
-                    self.gamestate.IPRegret[hand][0] / regret_sum,
-                    self.gamestate.IPRegret[hand][1] / regret_sum,
-                    self.gamestate.IPRegret[hand][2] / regret_sum
+        if pos == 'IP':
+            for hand in self.gamestate.IPfreqs:
+                regret_sum = sum(self.gamestate.IPRegret[hand])
+                if regret_sum > 0:
+                    self.gamestate.IPfreqs[hand] = [
+                        self.gamestate.IPRegret[hand][0] / regret_sum,
+                        self.gamestate.IPRegret[hand][1] / regret_sum,
+                        self.gamestate.IPRegret[hand][2] / regret_sum
+                        ]
+                else:
+                    self.gamestate.IPfreqs[hand] = [0.33, 0.33, 0.33]
+        else:
+            for hand in self.gamestate.OOPfreqs:
+                regret_sum = sum(self.gamestate.OOPRegret[hand])
+                if regret_sum > 0:
+                    self.gamestate.OOPfreqs[hand] = [
+                        self.gamestate.OOPRegret[hand][0] / regret_sum,
+                        self.gamestate.OOPRegret[hand][1] / regret_sum,
+                        self.gamestate.OOPRegret[hand][2] / regret_sum
                     ]
-            else:
-                self.gamestate.IPfreqs[hand] = [0.33, 0.33, 0.33]
-        for hand in self.gamestate.OOPfreqs:
-            regret_sum = sum(self.gamestate.OOPRegret[hand])
-            if regret_sum > 0:
-                self.gamestate.OOPfreqs[hand] = [
-                    self.gamestate.OOPRegret[hand][0] / regret_sum,
-                    self.gamestate.OOPRegret[hand][1] / regret_sum,
-                    self.gamestate.OOPRegret[hand][2] / regret_sum
-                ]
-            else:
-                self.gamestate.OOPfreqs[hand] = [0.33, 0.33, 0.33]
+                else:
+                    self.gamestate.OOPfreqs[hand] = [0.33, 0.33, 0.33]
+
         # recurse over children
         for child in self.children:
-            child.calc_new_strat()
+            child.calc_new_strat(pos)
 
 
     def to_string_tree(self, level=0):

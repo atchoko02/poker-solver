@@ -23,10 +23,10 @@ class Solver:
 solver = Solver()
 solver.flop_cards = [Card.new('3d'), Card.new('Jh'), Card.new('As')]
 
-hands = [Hand([Card.new('Qd'), Card.new('Qh')]), Hand([Card.new('Ad'), Card.new('Kc')])]
+hands = [Hand([Card.new('Qd'), Card.new('Qh')]), Hand([Card.new('Ad'), Card.new('Kc')]), Hand([Card.new('5h'), Card.new('2d')])]
 for hand in hands:
     solver.IPRange.add_hand(hand)
-hands2 = [Hand([Card.new('Ac'), Card.new('Ad')]), Hand([Card.new('5d'), Card.new('2s')]), Hand([Card.new('Qd'), Card.new('Qh')])]
+hands2 = [Hand([Card.new('Ac'), Card.new('3d')]), Hand([Card.new('Jd'), Card.new('2s')])]
 for hand in hands2:
     solver.OOPRange.add_hand(hand)
 
@@ -36,25 +36,25 @@ solver.game_state.create_new_flop(solver.flop_cards[0], solver.flop_cards[1], so
 solver.game_state.add_turn_and_river(Card.new('7d'), Card.new('8h'))
 root = Node(solver.game_state.__copy__(), 'OOP', 'action')
 root.generate_children(3)
-for i in range(50):
+
+
+for i in range(100):
     root.calc_values()
-    root.calc_new_strat()
+    root.calc_new_strat('OOP')
+    root.calc_values()
+    root.calc_new_strat('IP')
 
 print("\n")
 print(f"OOP regret: {root.gamestate.OOPRegret}")
-print(f"OOP new stratagy: {root.gamestate.OOPfreqs}")
+print(f"OOP stratagy: {root.gamestate.OOPfreqs}")
+print(f"OOP values: {root.gamestate.OOPvalues}")
+print(f"IP values: {root.gamestate.IPvalues}")
 
-print("\nOOP checks\n")
-check_node = root.children[2]
-print(check_node)
-print(f"IP regret: {check_node.gamestate.IPRegret}")
-print(f"IP new strat: {check_node.gamestate.IPfreqs}")
-
-print("\nIP raises\n")
 raise_node = root.children[1]
-print(raise_node)
-print(f"OOP regret: {check_node.gamestate.OOPRegret}")
-print(f"OOP new strat: {check_node.gamestate.OOPfreqs}")
+print("\n OOP rause \n")
+
+print(f"IP regret: {raise_node.gamestate.IPRegret}")
+print(f"IP stratagy: {raise_node.gamestate.IPfreqs}")
 
 
 # sampletree = Node(solver.game_state, 'OOP', 'action')

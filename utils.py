@@ -26,6 +26,50 @@ class Range:
         else:
             raise ValueError("Hand not found in range")
     
+    def add_pocket_pair(self, rank):
+        # Convert ranks if needed
+        letter_ranks = {'14': 'A', '13': 'K', '12': 'Q', '11': 'J', '10': 'T'}
+        if rank in letter_ranks:
+            rank = letter_ranks[rank]
+        
+        for suit1 in 'cdhs':
+            for suit2 in 'cdhs':
+                if suit1 != suit2:
+                    hand = Hand([Card.new(f"{rank}{suit1}"), Card.new(f"{rank}{suit2}")])
+                    self.add_hand(hand)
+    
+    def add_of_hand(self, rank1, rank2):
+        if rank1 == rank2:
+            raise ValueError("Cannot create a hand with two identical ranks")
+        
+        # Convert ranks if needed
+        letter_ranks = {'14': 'A', '13': 'K', '12': 'Q', '11': 'J', '10': 'T'}
+        if rank1 in letter_ranks:
+            rank1 = letter_ranks[rank1]
+        if rank2 in letter_ranks:
+            rank2 = letter_ranks[rank2]
+
+        for suit1 in 'cdhs':
+            for suit2 in 'cdhs':
+                if suit1 != suit2:
+                    hand = Hand([Card.new(f"{rank1}{suit1}"), Card.new(f"{rank2}{suit2}")])
+                    self.add_hand(hand)
+        
+    def add_suited_hand(self, rank1, rank2):
+        if rank1 == rank2:
+            raise ValueError("Cannot create a hand with two identical ranks")
+
+         # Convert ranks if needed
+        letter_ranks = {'14': 'A', '13': 'K', '12': 'Q', '11': 'J', '10': 'T'}
+        if rank1 in letter_ranks:
+            rank1 = letter_ranks[rank1]
+        if rank2 in letter_ranks:
+            rank2 = letter_ranks[rank2]
+
+        for suit in 'cdhs':
+            hand = Hand([Card.new(f"{rank1}{suit}"), Card.new(f"{rank2}{suit}")])
+            self.add_hand(hand)
+
     def __repr__(self):
         return ", ".join(str(hand) for hand in self.hands)
 

@@ -1,5 +1,4 @@
-# for now i will try generating a tree of node correctly and ignore the info / stratagy 
-# This will represent a node in the tree, and contain all the data that each node will have
+
 from treys import Card
 class Node:
     def __init__(self, gamestate, position, node_type, raise_level=0):
@@ -320,38 +319,33 @@ class Node:
                         regret = action_values[i] - strategy_ev
                         self.gamestate.IPRegret[hand][i] = max(0, regret)
 
-    def calc_new_strat(self, pos):
+    def calc_new_strat(self):
         # base case
         if self.type == 'terminal':
             return
 
         # start forming new strategy values
-        if pos == 'IP':
-            for hand in self.gamestate.IPfreqs:
-                regret_sum = sum(self.gamestate.IPRegret[hand])
-                if regret_sum > 0:
-                    self.gamestate.IPfreqs[hand] = [
-                        self.gamestate.IPRegret[hand][0] / regret_sum,
-                        self.gamestate.IPRegret[hand][1] / regret_sum,
-                        self.gamestate.IPRegret[hand][2] / regret_sum
-                        ]
-                else:
-                    self.gamestate.IPfreqs[hand] = [0.33, 0.33, 0.33]
-        else:
-            for hand in self.gamestate.OOPfreqs:
-                regret_sum = sum(self.gamestate.OOPRegret[hand])
-                if regret_sum > 0:
-                    self.gamestate.OOPfreqs[hand] = [
-                        self.gamestate.OOPRegret[hand][0] / regret_sum,
-                        self.gamestate.OOPRegret[hand][1] / regret_sum,
-                        self.gamestate.OOPRegret[hand][2] / regret_sum
+        for hand in self.gamestate.IPfreqs:
+            regret_sum = sum(self.gamestate.IPRegret[hand])
+            if regret_sum > 0:
+                self.gamestate.IPfreqs[hand] = [
+                    self.gamestate.IPRegret[hand][0] / regret_sum,
+                    self.gamestate.IPRegret[hand][1] / regret_sum,
+                    self.gamestate.IPRegret[hand][2] / regret_sum
                     ]
-                else:
-                    self.gamestate.OOPfreqs[hand] = [0.33, 0.33, 0.33]
+        
+        for hand in self.gamestate.OOPfreqs:
+            regret_sum = sum(self.gamestate.OOPRegret[hand])
+            if regret_sum > 0:
+                self.gamestate.OOPfreqs[hand] = [
+                    self.gamestate.OOPRegret[hand][0] / regret_sum,
+                    self.gamestate.OOPRegret[hand][1] / regret_sum,
+                    self.gamestate.OOPRegret[hand][2] / regret_sum
+                    ]
 
         # recurse over children
         for child in self.children:
-            child.calc_new_strat(pos)
+            child.calc_new_strat()
 
 
     def to_string_tree(self, level=0):

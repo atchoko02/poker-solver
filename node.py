@@ -101,7 +101,11 @@ class Node:
                         # if we are at the river it doesnt make a new sequence
                         # so we just add a terminal node
                         new_state = self.gamestate.__copy__()
-                        call_amount = self.gamestate.pot - (self.gamestate.initial_pot + self.gamestate.contribution[self.position])
+                        call_amount = 0
+                        if self.position == 'OOP':
+                            call_amount = self.gamestate.contribution['IP'] - self.gamestate.contribution['OOP']
+                        else:
+                            call_amount = self.gamestate.contribution['OOP'] - self.gamestate.contribution['IP']
                         new_state.contribution[self.position] += call_amount
                         new_state.pot += call_amount
                         call_node = Node(new_state, self.position, 'terminal')
@@ -109,7 +113,11 @@ class Node:
                     else:
                         new_state = self.gamestate.__copy__()
                         new_state.add_card(len(self.gamestate.community_cards))
-                        call_amount = self.gamestate.pot - (self.gamestate.initial_pot + self.gamestate.contribution[self.position])
+                        call_amount = 0
+                        if self.position == 'OOP':
+                            call_amount = self.gamestate.contribution['IP'] - self.gamestate.contribution['OOP']
+                        else:
+                            call_amount = self.gamestate.contribution['OOP'] - self.gamestate.contribution['IP']
                         new_state.contribution[self.position] += call_amount
                         new_state.pot += call_amount
                         call_node = Node(new_state, child_position, 'action')
@@ -121,7 +129,11 @@ class Node:
                     # if we are at the river it doesnt make a new sequence
                     # so we just add a terminal node
                     new_state = self.gamestate.__copy__()
-                    call_amount = self.gamestate.pot - (self.gamestate.contribution[self.position] + self.gamestate.initial_pot)
+                    call_amount = 0
+                    if self.position == 'OOP':
+                        call_amount = self.gamestate.contribution['IP'] - self.gamestate.contribution['OOP']
+                    else:
+                        call_amount = self.gamestate.contribution['OOP'] - self.gamestate.contribution['IP']
                     new_state.contribution[self.position] += call_amount
                     new_state.pot += call_amount
                     call_node = Node(new_state, self.position, 'terminal')
@@ -129,7 +141,11 @@ class Node:
                 else:
                     new_state = self.gamestate.__copy__()
                     new_state.add_card(len(self.gamestate.community_cards))
-                    call_amount = self.gamestate.pot - (self.gamestate.contribution[self.position] + self.gamestate.initial_pot)
+                    call_amount = 0
+                    if self.position == 'OOP':
+                        call_amount = self.gamestate.contribution['IP'] - self.gamestate.contribution['OOP']
+                    else:
+                        call_amount = self.gamestate.contribution['OOP'] - self.gamestate.contribution['IP']
                     new_state.contribution[self.position] += call_amount
                     new_state.pot += call_amount
                     #if it is OOP calling - then the next action will still be on OOP
@@ -151,20 +167,20 @@ class Node:
                 IPRange = self.gamestate.IPRange
                 OOPRange = self.gamestate.OOPRange
 
-                for IPhand in IPRange.hands:
-                    self.gamestate.IPvalues[IPhand] = 0
-                for OOPhand in OOPRange.hands:
-                    self.gamestate.OOPvalues[OOPhand] = 0
+                # for IPhand in IPRange.hands:
+                #     self.gamestate.IPvalues[IPhand] = 0
+                # for OOPhand in OOPRange.hands:
+                #     self.gamestate.OOPvalues[OOPhand] = 0
                 
                 for IPhand in IPRange.hands:
                     for card in IPhand.cards:
                         if card in self.gamestate.community_cards:
-                            self.gamestate.IPvalues[IPhand] = 0
+                            # self.gamestate.IPvalues[IPhand] = 0
                             continue
                     for OOPhand in OOPRange.hands:
                         for card2 in OOPhand.cards:
                             if card2 in self.gamestate.community_cards or card2 in IPhand.cards:
-                                self.gamestate.OOPvalues[OOPhand] = 0
+                                # self.gamestate.OOPvalues[OOPhand] = 0
                                 continue
                         if self.position == 'IP':
                             self.gamestate.OOPvalues[OOPhand] = self.gamestate.contribution['IP']
@@ -333,6 +349,9 @@ class Node:
                     self.gamestate.IPRegret[hand][1] / regret_sum,
                     self.gamestate.IPRegret[hand][2] / regret_sum
                     ]
+            if regret_sum == 0:
+                # if the regret sum is 0, we set the strategy to be uniform
+                self.gamestate.IPfreqs[hand] = [1/3, 1/3, 1/3]
         
         for hand in self.gamestate.OOPfreqs:
             regret_sum = sum(self.gamestate.OOPRegret[hand])
@@ -342,11 +361,37 @@ class Node:
                     self.gamestate.OOPRegret[hand][1] / regret_sum,
                     self.gamestate.OOPRegret[hand][2] / regret_sum
                     ]
+            if regret_sum == 0:
+                # if the regret sum is 0, we set the strategy to be uniform
+                self.gamestate.OOPfreqs[hand] = [1/3, 1/3, 1/3]
 
         # recurse over children
         for child in self.children:
             child.calc_new_strat()
+    
+    def remove_folded_hands(self, IPfolded_hands, OOPfolded_hands):
+        if self.position == 'IP':
+            # find if any hands have been folded
+            for hand in self.gamestate.IPfreqs:
+                if self.gamestate.IPfreqs[hand] is not None and self.gamestate.IPfreqs[hand][0] == 1.0:
+                    IPfolded_hands.add(hand)
+            
+            # remove folded hands from the range
+            for hand in IPfolded_hands:
+                if hand in self.gamestate.IPRange.hands:
+                    self.gamestate.IPRange.remove_hand(hand)   
+        else:     
+            for hand in self.gamestate.OOPfreqs:
+                if self.gamestate.OOPfreqs[hand] is not None and self.gamestate.OOPfreqs[hand][0] == 1.0:
+                    OOPfolded_hands.add(hand)
 
+            for hand in OOPfolded_hands:
+                if hand in self.gamestate.OOPRange.hands:
+                    self.gamestate.OOPRange.remove_hand(hand)
+            
+        # recurese over children
+        for child in self.children:
+            child.remove_folded_hands(IPfolded_hands.copy(), OOPfolded_hands.copy())
 
     def to_string_tree(self, level=0):
         indent = "  " * level

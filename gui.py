@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QScrollArea, QSizePolicy
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QScrollArea, QSizePolicy, QGridLayout
 )
 from game import Solver
 from node import Node
@@ -9,14 +9,35 @@ class StrategyWindow(QWidget):
     def __init__(self, freqs, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Strategy Frequencies")
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         if isinstance(freqs, dict):
-            for hand, freq_list in freqs.items():
-                layout.addWidget(QLabel(f"{hand}: {freq_list}"))
+            hands = list(freqs.items())
+            columns = 3  # Number of columns you want
+            for idx, (hand, freq_list) in enumerate(hands):
+                row = idx // columns
+                col = idx % columns
+                layout.addWidget(QLabel(f"{hand}: {freq_list}"), row, col)
         else:
-            layout.addWidget(QLabel(str(freqs)))
+            layout.addWidget(QLabel(str(freqs)), 0, 0)
         self.setLayout(layout)
-        self.resize(400, 600)
+        self.resize(600, 600)
+
+class RangeWindow(QWidget):
+    def __init__(self, rng, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Range")
+        layout = QGridLayout()
+        if hasattr(rng, "hands"):
+            hands = list(rng.hands)
+            columns = 3  # Number of columns you want
+            for idx, hand in enumerate(hands):
+                row = idx // columns
+                col = idx % columns
+                layout.addWidget(QLabel(str(hand)), row, col)
+        else:
+            layout.addWidget(QLabel(str(rng)), 0, 0)
+        self.setLayout(layout)
+        self.resize(400, 400)
 
 class NodeProperties(QWidget):
     def __init__(self, node, parent=None):
@@ -31,11 +52,26 @@ class NodeProperties(QWidget):
         layout.addWidget(QLabel(f"Number of Cards: {len(self.node.gamestate.community_cards)}"))
         layout.addWidget(QLabel(f"Pot: {getattr(self.node.gamestate, 'pot', 'N/A')}"))
         layout.addWidget(QLabel(f"Raise Level: {getattr(self.node, 'raise_level', 'N/A')}"))
-        # Strategy button
+        layout.addWidget(QLabel(f"OOP Current Contribution: {self.node.gamestate.contribution['OOP']}"))
+        layout.addWidget(QLabel(f"IP Current Contribution: {self.node.gamestate.contribution['IP']}"))
+        # Show Range button
+        range_btn = QPushButton("Show Range")
+        range_btn.clicked.connect(self.show_range_window)
+        layout.addWidget(range_btn)
+        # Show Strategy button
         strat_btn = QPushButton("Show Strategy")
         strat_btn.clicked.connect(self.show_strategy_window)
         layout.addWidget(strat_btn)
         self.setLayout(layout)
+
+    def show_range_window(self):
+        # Show the correct range based on node position
+        if self.node.position == 'OOP':
+            rng = self.node.gamestate.OOPRange
+        else:
+            rng = self.node.gamestate.IPRange
+        self.range_window = RangeWindow(rng)
+        self.range_window.show()
 
     def show_strategy_window(self):
         # Show the correct frequencies based on node position
@@ -189,6 +225,7 @@ if __name__ == "__main__":
         solver.IPRange.add_pocket_pair(str(i))
         solver.OOPRange.add_pocket_pair(str(i))
 
+
     solver.game_state.add_ranges(solver.IPRange, solver.OOPRange)
     solver.game_state.generate_default_freqs(solver.IPRange, solver.OOPRange)
     solver.game_state.create_new_flop(solver.flop_cards[0], solver.flop_cards[1], solver.flop_cards[2])
@@ -210,14 +247,16 @@ if __name__ == "__main__":
 
 
     for i in range(100):
-        print(f"Iteration {i+1}")
         root.calc_values()
         OOP_sarting_ev = get_current_ev('OOP')
         IP_sarting_ev = get_current_ev('IP')
         root.calc_new_strat()
+        root.remove_folded_hands(set(), set())
         root.calc_values()
         OOP_new_ev = get_current_ev('OOP')
         IP_new_ev = get_current_ev('IP')
+        print(f"OOP EV: {OOP_new_ev}")
+        print(f"IP EV: {IP_new_ev}")
         if OOP_new_ev == OOP_sarting_ev and IP_new_ev == IP_sarting_ev:
             break
 

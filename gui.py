@@ -38,6 +38,22 @@ class RangeWindow(QWidget):
             layout.addWidget(QLabel(str(rng)), 0, 0)
         self.setLayout(layout)
         self.resize(400, 400)
+class RegretWindow(QWidget):
+    def __init__(self, regrets, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Regrets")
+        layout = QGridLayout()
+        if isinstance(regrets, dict):
+            hands = list(regrets.items())
+            columns = 3  # Number of columns you want
+            for idx, (hand, regret_list) in enumerate(hands):
+                row = idx // columns
+                col = idx % columns
+                layout.addWidget(QLabel(f"{hand}: {regret_list}"), row, col)
+        else:
+            layout.addWidget(QLabel(str(regrets)), 0, 0)
+        self.setLayout(layout)
+        self.resize(600, 600)
 
 class NodeProperties(QWidget):
     def __init__(self, node, parent=None):
@@ -62,10 +78,13 @@ class NodeProperties(QWidget):
         strat_btn = QPushButton("Show Strategy")
         strat_btn.clicked.connect(self.show_strategy_window)
         layout.addWidget(strat_btn)
+        # Show Regret button
+        regret_btn = QPushButton("Show Regret")
+        regret_btn.clicked.connect(self.show_regret_window)
+        layout.addWidget(regret_btn)
         self.setLayout(layout)
 
     def show_range_window(self):
-        # Show the correct range based on node position
         if self.node.position == 'OOP':
             rng = self.node.gamestate.OOPRange
         else:
@@ -74,13 +93,20 @@ class NodeProperties(QWidget):
         self.range_window.show()
 
     def show_strategy_window(self):
-        # Show the correct frequencies based on node position
         if self.node.position == 'OOP':
             freqs = self.node.gamestate.OOPfreqs
         else:
             freqs = self.node.gamestate.IPfreqs
         self.strat_window = StrategyWindow(freqs)
         self.strat_window.show()
+
+    def show_regret_window(self):
+        if self.node.position == 'OOP':
+            regrets = self.node.gamestate.OOPRegret
+        else:
+            regrets = self.node.gamestate.IPRegret
+        self.regret_window = RegretWindow(regrets)
+        self.regret_window.show()
 
 class TreeButtonBranch(QWidget):
     def __init__(self, node, on_node_clicked, parent=None):
@@ -246,7 +272,7 @@ if __name__ == "__main__":
             return value / len(root.gamestate.IPvalues)
 
 
-    for i in range(100):
+    for i in range(2):
         root.calc_values()
         OOP_sarting_ev = get_current_ev('OOP')
         IP_sarting_ev = get_current_ev('IP')

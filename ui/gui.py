@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QScrollArea, QSizePolicy, QGridLayout
 )
-from game import Solver
-from node import Node
-from utils import *
+from tree.game import Solver
+from tree.node import Node
+from tree.utils import *
 
 class StrategyWindow(QWidget):
     def __init__(self, freqs, parent=None):
@@ -240,8 +240,8 @@ class TreeExplorer(QWidget):
 
 if __name__ == "__main__":
     import sys
-    from node import Node
-    from utils import GameState
+    from tree.node import Node
+    from tree.utils import GameState
 
     app = QApplication(sys.argv)
     solver = Solver()
